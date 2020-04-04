@@ -59,7 +59,7 @@ module.exports = () => {
         visit(tree, "link", async (node) => {
             const { url } = node
             const [dataUrl, title] = await getOgp(url)
-            const image = genElement('dataUrl', title)
+            const image = genElement(dataUrl, title)
             node['data'] = { hProperties: { className: ["MuiTypography-root", "MuiLink-root", "MuiLink-underlineNone", "MuiTypography-colorPrimary"] } }
             node.children = [...image]
             resolve()
