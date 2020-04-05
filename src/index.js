@@ -54,17 +54,26 @@ const genElement = (dataUrl, title) => {
 }
 
 
-module.exports = () => {
-    return (tree) => new Promise(async (resolve, reject) => {
-        visit(tree, "link", async (node) => {
-            const { url } = node
-            const [dataUrl, title] = await getOgp(url)
-            const image = genElement(dataUrl, title)
-            node['data'] = { hProperties: { className: ["MuiTypography-root", "MuiLink-root", "MuiLink-underlineNone", "MuiTypography-colorPrimary"] } }
-            node.children = [...image]
-            resolve()
-        })
+module.exports = () => async (tree) => {
+    let nodes = []
+    visit(tree, "link", (node) => {
+        if (!node.url.includes('http')) {
+            return;
+        }
+        nodes.push(node)
+        return;
     })
+    for (const node of nodes) {
+        const { url } = node
+        const [dataUrl, title] = await getOgp(url)
+        if (!dataUrl || !title) {
+            continue;
+        }
+        const image = genElement(dataUrl, title)
+        node['data'] = { hProperties: { className: ["MuiTypography-root", "MuiLink-root", "MuiLink-underlineNone", "MuiTypography-colorPrimary"] } }
+        node.children = [...image]
+    }
+    return;
 }
 
 const getOgp = async (url) => {
@@ -80,6 +89,9 @@ const getOgp = async (url) => {
             title = meta.getAttribute('content')
         }
     })
+    if (!image || !title) {
+        return ['', '']
+    }
 
     const { data: imageBuffer } = await axios.get(image, { responseType: 'arraybuffer' })
     const ext = [...path.extname(image)].slice(1).join('')
