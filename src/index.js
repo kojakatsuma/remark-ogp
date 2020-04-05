@@ -5,52 +5,21 @@ const path = require('path')
 
 
 const genElement = (dataUrl, title) => {
-
-    const root = {
-        type: 'element',
-        tagName: 'div',
-        data: {
-            hProperties: {
-                className: 'MuiCardHeader-root',
-                style: 'width: 100%;'
-            }
+    return [
+        {
+            type: 'text',
+            value: title
         },
-        children: []
-    }
-    const content = {
-        type: 'element',
-        tagName: 'div',
-        data: {
-            hProperties: {
-                className: 'MuiCardHeader-content',
+        {
+            type: 'image',
+            url: dataUrl,
+            title,
+            alt: title,
+            data: {
+                hProperties: { style: 'max-width: 345px'}
             }
-        },
-        children: []
-    }
-
-    const body = {
-        type: 'paragraph',
-        data: {
-            hProperties: {
-                className: ['MuiTypography-root', 'MuiTypography-body2']
-            }
-        },
-        children: [{ type: 'text', value: title }]
-    }
-
-    const image = {
-        type: 'element',
-        tagName: 'div',
-        data: {
-            hProperties: {
-                className: ['MuiCardMedia-root', 'jss82'],
-                style: `background-image: url(${dataUrl});`
-            }
-        },
-    }
-    content.children.push(body)
-    root.children.push(content)
-    return [root, image]
+        }
+    ]
 }
 
 
@@ -59,9 +28,6 @@ module.exports = () => async (tree) => {
     visit(tree, "link", (node) => {
         if (!node.url.includes('http') || !node.title) {
             return;
-        }
-        if (node.url === 'https://fontworks.co.jp/fontsearch/TsukuARdGothicStd-R/') {
-            console.log(JSON.stringify(node))
         }
         nodes.push(node)
         return;
@@ -72,9 +38,8 @@ module.exports = () => async (tree) => {
         if (!dataUrl || !title) {
             continue;
         }
-        const image = genElement(dataUrl, title)
-        node['data'] = { hProperties: { className: ["MuiTypography-root", "MuiLink-root", "MuiLink-underlineNone", "MuiTypography-colorPrimary"] } }
-        node.children = [...image]
+        const content = genElement(dataUrl, title)
+        node.children = [...content]
     }
     return;
 }
