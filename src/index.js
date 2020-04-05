@@ -8,15 +8,19 @@ const genElement = (dataUrl, title) => {
     return [
         {
             type: 'text',
-            value: title
+            value: title,
         },
         {
-            type: 'image',
-            url: dataUrl,
-            title,
-            alt: title,
+            type: 'element',
+            tagName: 'div',
             data: {
-                hProperties: { style: 'max-width: 345px'}
+                hProperties: {
+                    style: `
+                height: 20%; 
+                background-image: url(${dataUrl}); 
+                background-size: contain;
+                background-repeat: no-repeat;
+                ` }
             }
         }
     ]
@@ -40,6 +44,12 @@ module.exports = () => async (tree) => {
         }
         const content = genElement(dataUrl, title)
         node.children = [...content]
+        node.data = {
+            hProperties: {
+                style: `
+            font-size: 10px; 
+            ` }
+        }
     }
     return;
 }
