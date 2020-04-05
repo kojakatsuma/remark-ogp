@@ -16,7 +16,7 @@ const genElement = (dataUrl, title) => {
             data: {
                 hProperties: {
                     style: `
-                height: 20%; 
+                height: 200px; 
                 background-image: url(${dataUrl}); 
                 background-size: contain;
                 background-repeat: no-repeat;
@@ -47,7 +47,7 @@ module.exports = () => async (tree) => {
         node.data = {
             hProperties: {
                 style: `
-            font-size: 10px; 
+            font-size: 1em; 
             ` }
         }
     }
