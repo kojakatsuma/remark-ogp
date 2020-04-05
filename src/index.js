@@ -55,10 +55,13 @@ const genElement = (dataUrl, title) => {
 
 
 module.exports = () => async (tree) => {
-    let nodes = []
+    const nodes = []
     visit(tree, "link", (node) => {
-        if (!node.url.includes('http')) {
+        if (!node.url.includes('http') || !node.title) {
             return;
+        }
+        if (node.url === 'https://fontworks.co.jp/fontsearch/TsukuARdGothicStd-R/') {
+            console.log(JSON.stringify(node))
         }
         nodes.push(node)
         return;
