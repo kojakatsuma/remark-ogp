@@ -7,8 +7,7 @@ const path = require('path')
 const genElement = (dataUrl, title) => {
     return [
         {
-            type: 'text',
-            value: title,
+            type: 'text', value: title
         },
         {
             type: 'element',
@@ -22,20 +21,25 @@ const genElement = (dataUrl, title) => {
                 background-repeat: no-repeat;
                 ` }
             }
-        }
+        },
     ]
 }
 
 
 module.exports = () => async (tree) => {
     const nodes = []
-    visit(tree, "link", (node) => {
-        if (!node.url.includes('http') || !node.title) {
+    visit(tree, "paragraph", (parent) => {
+        visit(parent, "link", (node) => {
+            if (!node.url.includes('http') || !node.title) {
+                return;
+            }
+            parent['type'] = 'link'
+            parent['url'] = node.url
+            nodes.push(parent)
             return;
-        }
-        nodes.push(node)
-        return;
+        })
     })
+
     for (const node of nodes) {
         const { url } = node
         const [dataUrl, title] = await getOgp(url)
@@ -43,7 +47,8 @@ module.exports = () => async (tree) => {
             continue;
         }
         const content = genElement(dataUrl, title)
-        node.children = [...content]
+        node.title = title
+        node.children = content
         node.data = {
             hProperties: {
                 style: `
