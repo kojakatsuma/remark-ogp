@@ -83,7 +83,11 @@ module.exports = () => async (tree) => {
   })
   visit(tree, 'paragraph', (parent) => {
     visit(parent, 'link', (node) => {
-      if (!node.url.includes('http') || parent.children.length > 1 || node.skip) {
+      if (
+        !node.url.includes('http') ||
+        parent.children.length > 1 ||
+        node.skip
+      ) {
         return
       }
       parent['url'] = node.url
@@ -143,9 +147,14 @@ const getOgp = async (url) => {
       return ['', '']
     }
 
-    const { data: imageBuffer } = await axios.get(image, {
-      responseType: 'arraybuffer',
-    })
+    const { data: imageBuffer } = await axios
+      .get(image, {
+        responseType: 'arraybuffer',
+      })
+      .catch((error) => {
+        console.log(`image download failed: ${image}`)
+        throw error;
+      })
     const ext = [...path.extname(image)].slice(1).join('')
 
     return [`data:image/${ext};base64,${imageBuffer.toString('base64')}`, title]
