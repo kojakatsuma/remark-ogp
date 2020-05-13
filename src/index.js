@@ -150,6 +150,7 @@ const getOgp = async (url) => {
 
     return [`data:image/${ext};base64,${imageBuffer.toString('base64')}`, title]
   } catch (error) {
+    console.log(error)
     return ['', '']
   }
 }
