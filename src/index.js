@@ -15,6 +15,7 @@ const genElement = (dataUrl, title, url) => {
     data: {
       hProperties: {
         style: `
+                padding: 10px;
                 width: 350px;
                 border: 1px solid;
                 border-radius: 10px;
