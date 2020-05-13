@@ -3,82 +3,126 @@ const axios = require('axios')
 const { parse } = require('node-html-parser')
 const path = require('path')
 
-
-const genElement = (dataUrl, title) => {
-    return [
-        {
-            type: 'text', value: title
+const genElement = (dataUrl, title, url) => {
+  const base = {
+    type: 'element',
+    tagName: 'div',
+    data: {
+      hProperties: {
+        style: `
+                width: 350px;
+                border: 1px solid;
+                border-radius: 10px;
+                border-color: #3333331f;
+                `,
+      },
+    },
+    children: [],
+  }
+  const link = {
+    type: 'link',
+    url,
+    title,
+    data: {
+      hProperties: {
+        style: `
+              font-size: 1em; 
+              text-decoration: none;
+              width: 300px;
+              `,
+      },
+    },
+  }
+  link.children = [
+    {
+      type: 'element',
+      tagName: 'div',
+      children: [{ type: 'text', value: title }],
+      data: {
+        hProperties: {
+          style: `
+                font-size: 1em; 
+                width: 300px;
+                margin: auto;
+                `,
         },
-        {
-            type: 'element',
-            tagName: 'div',
-            data: {
-                hProperties: {
-                    style: `
-                height: 200px; 
+      },
+    },
+    {
+      type: 'element',
+      tagName: 'div',
+      data: {
+        hProperties: {
+          style: `
+                height: 200px;
                 background-image: url(${dataUrl}); 
                 background-size: contain;
                 background-repeat: no-repeat;
-                ` }
-            }
+                margin: auto;
+                `,
         },
-    ]
+      },
+    },
+  ]
+  base.children.push(link)
+  return base
 }
 
-
 module.exports = () => async (tree) => {
-    const nodes = []
-    visit(tree, "paragraph", (parent) => {
-        visit(parent, "link", (node) => {
-            if (!node.url.includes('http') || !node.title) {
-                return;
-            }
-            parent['type'] = 'link'
-            parent['url'] = node.url
-            nodes.push(parent)
-            return;
-        })
+  const parents = []
+  visit(tree, 'paragraph', (parent) => {
+    visit(parent, 'link', (node) => {
+      if (!node.url.includes('http') || parent.children.length > 1) {
+        return
+      }
+      parent["url"] = node.url
+      parents.push(parent)
+      return
     })
+  })
 
-    for (const node of nodes) {
-        const { url } = node
-        const [dataUrl, title] = await getOgp(url)
-        if (!dataUrl || !title) {
-            continue;
-        }
-        const content = genElement(dataUrl, title)
-        node.title = title
-        node.children = content
-        node.data = {
-            hProperties: {
-                style: `
-            font-size: 1em; 
-            ` }
-        }
+  for (const parent of parents) {
+    const { url } = parent
+    const [dataUrl, title] = await getOgp(url)
+    if (!dataUrl || !title) {
+      continue
     }
-    return;
+    const content = genElement(dataUrl, title, url)
+    delete parent.url
+    parent.children = [content]
+    parent.data = {
+      hProperties: {
+        style: `
+            font-size: 1em; 
+            text-decoration: none;
+            width: 300px;
+            `,
+      },
+    }
+  }
 }
 
 const getOgp = async (url) => {
-    const { data } = await axios.get(url, { responseType: 'document' })
-    const root = parse(data)
-    const metas = root.querySelectorAll("meta")
-    let [image, title] = ['', '']
-    metas.forEach(meta => {
-        if (meta.getAttribute('property') === 'og:image') {
-            image = meta.getAttribute('content')
-        }
-        if (meta.getAttribute('property') === 'og:title') {
-            title = meta.getAttribute('content')
-        }
-    })
-    if (!image || !title) {
-        return ['', '']
+  const { data } = await axios.get(url, { responseType: 'document' })
+  const root = parse(data)
+  const metas = root.querySelectorAll('meta')
+  let [image, title] = ['', '']
+  metas.forEach((meta) => {
+    if (meta.getAttribute('property') === 'og:image') {
+      image = meta.getAttribute('content')
     }
+    if (meta.getAttribute('property') === 'og:title') {
+      title = meta.getAttribute('content')
+    }
+  })
+  if (!image || !title) {
+    return ['', '']
+  }
 
-    const { data: imageBuffer } = await axios.get(image, { responseType: 'arraybuffer' })
-    const ext = [...path.extname(image)].slice(1).join('')
+  const { data: imageBuffer } = await axios.get(image, {
+    responseType: 'arraybuffer',
+  })
+  const ext = [...path.extname(image)].slice(1).join('')
 
-    return [`data:image/${ext};base64,${imageBuffer.toString('base64')}`, title]
-
+  return [`data:image/${ext};base64,${imageBuffer.toString('base64')}`, title]
 }
