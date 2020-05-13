@@ -75,9 +75,14 @@ const genElement = (dataUrl, title, url) => {
 
 module.exports = () => async (tree) => {
   const parents = []
+  visit(tree, 'listItem', (listItem) => {
+    visit(listItem, 'link', (link) => {
+      link['skip'] = true
+    })
+  })
   visit(tree, 'paragraph', (parent) => {
     visit(parent, 'link', (node) => {
-      if (!node.url.includes('http') || parent.children.length > 1) {
+      if (!node.url.includes('http') || parent.children.length > 1 || node.skip) {
         return
       }
       parent['url'] = node.url
