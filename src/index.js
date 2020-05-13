@@ -2,6 +2,11 @@ const visit = require('unist-util-visit')
 const axios = require('axios')
 const { parse } = require('node-html-parser')
 const path = require('path')
+const { Buffer } = require('buffer')
+const Iconv = require('iconv').Iconv
+const jschardet = require('jschardet')
+
+const iconv = new Iconv('SHIFT_JIS', 'UTF-8')
 
 const genElement = (dataUrl, title, url) => {
   const base = {
@@ -75,7 +80,7 @@ module.exports = () => async (tree) => {
       if (!node.url.includes('http') || parent.children.length > 1) {
         return
       }
-      parent["url"] = node.url
+      parent['url'] = node.url
       parents.push(parent)
       return
     })
@@ -103,26 +108,42 @@ module.exports = () => async (tree) => {
 }
 
 const getOgp = async (url) => {
-  const { data } = await axios.get(url, { responseType: 'document' })
-  const root = parse(data)
-  const metas = root.querySelectorAll('meta')
-  let [image, title] = ['', '']
-  metas.forEach((meta) => {
-    if (meta.getAttribute('property') === 'og:image') {
-      image = meta.getAttribute('content')
+  try {
+    const data = await axios
+      .get(url, { responseType: 'arraybuffer' })
+      .then(({ data }) => {
+        const buf = Buffer.from(data)
+        const { encoding } = jschardet.detect(buf)
+        if (encoding === 'UTF-8') {
+          return buf.toString()
+        }
+        if (encoding === 'SHIFT_JIS') {
+          return iconv.convert(buf).toString()
+        }
+        throw new Error('not support Character code')
+      })
+    const root = parse(data)
+    const metas = root.querySelectorAll('meta')
+    let [image, title] = ['', '']
+    metas.forEach((meta) => {
+      if (meta.getAttribute('property') === 'og:image') {
+        image = meta.getAttribute('content')
+      }
+      if (meta.getAttribute('property') === 'og:title') {
+        title = meta.getAttribute('content')
+      }
+    })
+    if (!image || !title) {
+      return ['', '']
     }
-    if (meta.getAttribute('property') === 'og:title') {
-      title = meta.getAttribute('content')
-    }
-  })
-  if (!image || !title) {
+
+    const { data: imageBuffer } = await axios.get(image, {
+      responseType: 'arraybuffer',
+    })
+    const ext = [...path.extname(image)].slice(1).join('')
+
+    return [`data:image/${ext};base64,${imageBuffer.toString('base64')}`, title]
+  } catch (error) {
     return ['', '']
   }
-
-  const { data: imageBuffer } = await axios.get(image, {
-    responseType: 'arraybuffer',
-  })
-  const ext = [...path.extname(image)].slice(1).join('')
-
-  return [`data:image/${ext};base64,${imageBuffer.toString('base64')}`, title]
 }
