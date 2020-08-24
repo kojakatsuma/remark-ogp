@@ -15,7 +15,7 @@
     "vfile-reporter": "^6.0.1"
   },
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.20.0",
     "iconv": "^3.0.0",
     "jschardet": "^2.1.1",
     "node-html-parser": "^1.2.17",
