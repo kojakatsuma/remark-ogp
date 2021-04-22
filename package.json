@@ -21,6 +21,6 @@
     "node-html-parser": "^1.2.17",
     "remark-html": "^11.0.1",
     "remark-parse": "^8.0.2",
-    "unist-util-visit": "^2.0.2"
+    "unist-util-visit": "^3.0.0"
   }
 }
